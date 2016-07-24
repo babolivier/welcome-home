@@ -12,7 +12,7 @@ When I got that done, I wanted to enhance it. Since I didn't want just some cent
 
 Welcome Home is a bash script which detects when a selected device is connected to your local network. If it detects the device, it will communicate with Mopidy and start playing a selected stream (set in the configuration file) on the Pine64's jack output.
 
-In my example, when I get home and my phone connects to my apartment's wifi, it gets a static IP address (as I configured it in my DHCP server). Welcome Home detects it, which means that I'm home or almost there, and start some nice Trance music for me.
+In my example, when I get home and my phone connects to my apartment's wifi, it gets a static IP address (as I configured it in my DHCP server). Welcome Home detects it, which means that I'm home or almost there, and starts some nice Trance music for me.
 
 When Welcome Home will stop detecting the device, it will automatically tell Mopidy to stop playing the stream. Which means that if I want to stop the music and am too lazy to turn off my sound system, I can also stop the wifi on my phone.
 
@@ -57,7 +57,7 @@ I had some troubles setting up the Pine's soundcard, but finally managed it by i
 
 ### Binding with alsa
 
-After following the above instructions, I also installed the `gstreamer1.0-alsa` package, which got me some nice ALSA plugins for Gstreamer. I edited the `/usr/share/alsa/alsa.conf` file and set both the `defaults.ctl.card` and the `defaults.pcm.card` properties from 0 to 1, so ALSA doesn't have to wonder too much about what soundcard to use (0 is the HDMI output and 1 is the jack output). I then set Mopidy's configuration file to what you can find in `mopidy/mopidy-pine64.conf`. It's basically the default configuration file, but with the right bindings.
+After following the instructions above, I also installed the `gstreamer1.0-alsa` package, which got me some nice ALSA plugins for Gstreamer. I edited the `/usr/share/alsa/alsa.conf` file and set both the `defaults.ctl.card` and the `defaults.pcm.card` properties from 0 to 1, so ALSA doesn't have to wonder too much about what soundcard to use (0 is the HDMI output and 1 is the jack output). I then set Mopidy's configuration file to what you can find in `mopidy/mopidy-pine64.conf`. It's basically the default configuration file, but with the right bindings.
 
 ### Launch Mopidy at startup
 
