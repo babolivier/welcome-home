@@ -1,6 +1,7 @@
 [Unit]
 Description=Welcome Home
 After=mopidy.service
+Requires=mopidy.service
 [Service]
 Type=simple
 ExecStart=/usr/local/bin/welcomehome /etc/welcomehome/welcomehome.conf
