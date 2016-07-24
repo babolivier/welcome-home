@@ -1,0 +1,10 @@
+[Unit]
+Description=Mopidy
+After=network.target
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/mopidy
+Restart=on-abort
+User=mopidy
+[Install]
+WantedBy=multi-user.target

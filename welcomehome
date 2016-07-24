@@ -1,0 +1,95 @@
+#!/bin/bash
+
+
+##### FUNCTIONS #####
+
+log() {
+    # Beautiful logs
+    date=`date +"%d/%m/%Y - %H:%M:%S"`
+    echo "[$date]" $1
+}
+
+play_stream() {
+    # Reset playback state
+    curl -s -d '{"jsonrpc": "2.0", "id": 1, "method": "core.playback.stop"}' http://localhost:6680/mopidy/rpc > /dev/null
+    curl -s -d '{"jsonrpc": "2.0", "id": 1, "method": "core.tracklist.clear"}' http://localhost:6680/mopidy/rpc > /dev/null
+
+    # Add track infos
+    stream=$1
+    log "Playing stream $stream"
+
+    data='{"jsonrpc": "2.0", "id": 1, "method": "core.tracklist.add", "params": [ [ { "__model__": "Track", "uri": "STREAM" } ] ] }'
+    # Using sed cuz simple quotes
+    data=`echo $data | sed "s,STREAM,${stream},"`
+
+    # Play dat sound
+    curl -s -d "$data" http://localhost:6680/mopidy/rpc > /dev/null
+    curl -s -d '{"jsonrpc": "2.0", "id": 1, "method": "core.playback.play"}' http://localhost:6680/mopidy/rpc > /dev/null
+}
+
+stop_stream() {
+    # Stop dat sound
+    curl -s -d '{"jsonrpc": "2.0", "id": 1, "method": "core.playback.stop"}' http://localhost:6680/mopidy/rpc > /dev/null
+    log "Stream stopped"
+}
+
+parse_arg() {
+    # Echoes the value of a given parameter in a given configuration file
+    value=$(cat $1 | grep -E "^$2" | cut -d"=" -f2)
+    value=$(echo $value | sed "s,^\s+,,")
+    echo $value
+}
+
+check_url() {
+    # Check if URL is starting with "http(s)://"
+    # Returns the same code as grep, which is 1 if incorrect,
+    # 0 if correct
+    echo $1 | grep -E "https?\://"
+    return $?
+}
+
+
+##### PROGRAM #####
+
+if [[ $# -eq 0 || ! -f $1 ]]; then
+    echo "I need a config file as first argument"
+    exit 1
+fi
+
+config_file=$1
+
+log "Parsing the configuration file"
+
+# Get parameters from the given configuration file
+stream=$(parse_arg $config_file "stream")
+threshold=$(parse_arg $config_file "device_threshold")
+address=$(parse_arg $config_file "device_address")
+
+if [ ! $(check_url $stream) ]; then
+    echo "Incorrect stream address"
+    exit 1
+fi
+
+log "Initialisation complete"
+
+while true; do
+    # Lock file
+    lock_file="/etc/welcomehome/home.lck"
+
+    count=$(ping -W 1 -c $threshold $address | grep ttl | wc -l)
+
+    if [ $count -gt 0 ]; then
+        # mopidy.lck present = music already playing
+        if [ ! -f $lock_file ]; then
+            log "Device detected"
+            play_stream $stream
+            touch $lock_file
+        fi
+    else
+        if [ -f $lock_file ]; then
+            log "Device lost"
+            stop_stream
+            rm $lock_file
+        fi
+    fi
+done
