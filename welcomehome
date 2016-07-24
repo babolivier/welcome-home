@@ -1,12 +1,26 @@
 #!/bin/bash
 
-
 ##### FUNCTIONS #####
 
 log() {
     # Beautiful logs
     date=`date +"%d/%m/%Y - %H:%M:%S"`
     echo "[$date]" $1
+}
+
+parse_arg() {
+    # Echoes the value of a given parameter in a given configuration file
+    value=$(cat $1 | grep -E "^$2" | cut -d"=" -f2)
+    value=$(echo $value | sed "s,^\s+,,")
+    echo $value
+}
+
+check_url() {
+    # Check if URL is starting with "http(s)://"
+    # Returns the same code as grep, which is 1 if incorrect,
+    # 0 if correct
+    echo $1 | grep -E "https?\://"
+    return $?
 }
 
 play_stream() {
@@ -32,22 +46,6 @@ stop_stream() {
     curl -s -d '{"jsonrpc": "2.0", "id": 1, "method": "core.playback.stop"}' http://localhost:6680/mopidy/rpc > /dev/null
     log "Stream stopped"
 }
-
-parse_arg() {
-    # Echoes the value of a given parameter in a given configuration file
-    value=$(cat $1 | grep -E "^$2" | cut -d"=" -f2)
-    value=$(echo $value | sed "s,^\s+,,")
-    echo $value
-}
-
-check_url() {
-    # Check if URL is starting with "http(s)://"
-    # Returns the same code as grep, which is 1 if incorrect,
-    # 0 if correct
-    echo $1 | grep -E "https?\://"
-    return $?
-}
-
 
 ##### PROGRAM #####
 
