@@ -40,7 +40,7 @@ For more info on the configuration syntax, have a look at the `welcomehome.examp
 
 Once you moved all the needed files, and filled your configuration file, you need to start Welcome Home as a daemon. I use [systemd](https://freedesktop.org/wiki/Software/systemd/) for that (with the `welcomehome.service` file), but you're free to use whatever you want (and even to send my your configuration file in a [pull request](https://github.com/babolivier/welcome-home/pulls) so I can add it to this repi :wink:).
 
-To start Welcome Home, and launch it at the machine's startup, with systemd, just run:
+To start Welcome Home, and launch it at the machine's startup, with systemd, just run as root:
 
 ```shell
 systemctl enable welcomehome
