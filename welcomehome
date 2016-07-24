@@ -77,7 +77,7 @@ while true; do
     count=$(ping -W 1 -c $threshold $address | grep ttl | wc -l)
 
     if [ $count -gt 0 ]; then
-        # mopidy.lck present = music already playing
+        # Lock file present = music already playing
         if [ ! -f $lock_file ]; then
             log "Device detected"
             play_stream $stream
