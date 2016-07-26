@@ -19,7 +19,7 @@ check_url() {
     # Check if URL is starting with "http(s)://"
     # Returns the same code as grep, which is 1 if incorrect,
     # 0 if correct
-    echo $1 | grep -E "https?\://"
+    echo $1 | grep -E "^https?\://"
     return $?
 }
 
