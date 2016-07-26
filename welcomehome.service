@@ -5,6 +5,7 @@ Requires=mopidy.service
 [Service]
 Type=simple
 ExecStart=/usr/local/bin/welcomehome /etc/welcomehome/welcomehome.conf
+ExecStopPost=-/bin/rm /etc/welcomehome/home.lck
 Restart=on-abort
 [Install]
 WantedBy=multi-user.target
