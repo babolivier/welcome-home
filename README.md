@@ -10,7 +10,7 @@ When I got that done, I wanted to enhance it. Since I didn't want just some cent
 
 ## Welcome Home
 
-Welcome Home is a bash script which detects when a selected device is connected to your local network. If it detects the device, it will communicate with Mopidy using its [JSON API](https://docs.mopidy.com/en/latest/api/http/) and start playing a selected stream (set in the configuration file) on the Pine64's jack output.
+Welcome Home is a bash script (ran as a daemon) which detects when a selected device is connected to your local network. If it detects the device, it will communicate with Mopidy using its [JSON API](https://docs.mopidy.com/en/latest/api/http/) and start playing a selected stream (set in the configuration file) on the Pine64's jack output.
 
 In my example, when I get home and my phone connects to my apartment's wifi, it gets a static IP address (as I configured it in my DHCP server). Welcome Home detects it, which means that I'm home or almost there, and starts some nice Trance music for me.
 
