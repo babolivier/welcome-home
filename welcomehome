@@ -23,6 +23,28 @@ check_url() {
     return $?
 }
 
+check_volume() {
+    # Check if the volume value is valid
+    if [ $1 -gt 100 ] || [ $1 -lt 0 ]; then
+        echo "Invalid volume value"
+        exit 1
+    fi
+}
+
+set_volume() {
+    # Set the volume to the right value
+    volume=$1
+    check_volume $volume
+    log "Set volume to $volume"
+
+    data='{"jsonrpc": "2.0", "id": 1, "method": "core.mixer.set_volume", "params": [VOLUME]}'
+    # Using sed cuz simple quotes
+    data=`echo $data | sed "s/VOLUME/${volume}/"`
+
+    # Send the load
+    curl -s -d "$data" http://localhost:6680/mopidy/rpc > /dev/null
+}
+
 play_stream() {
     # Reset playback state
     curl -s -d '{"jsonrpc": "2.0", "id": 1, "method": "core.playback.stop"}' http://localhost:6680/mopidy/rpc > /dev/null
@@ -39,6 +61,9 @@ play_stream() {
     # Play dat sound
     curl -s -d "$data" http://localhost:6680/mopidy/rpc > /dev/null
     curl -s -d '{"jsonrpc": "2.0", "id": 1, "method": "core.playback.play"}' http://localhost:6680/mopidy/rpc > /dev/null
+
+    # The right music at the righ volume. Nothing's more perfect.
+    set_volume $2
 }
 
 stop_stream() {
@@ -59,6 +84,7 @@ config_file=$1
 log "Parsing the configuration file"
 
 # Get parameters from the given configuration file
+volume=$(parse_arg $config_file "volume")
 stream=$(parse_arg $config_file "stream")
 threshold=$(parse_arg $config_file "device_threshold")
 address=$(parse_arg $config_file "device_address")
@@ -80,7 +106,7 @@ while true; do
         # Lock file present = music already playing
         if [ ! -f $lock_file ]; then
             log "Device detected"
-            play_stream $stream
+            play_stream $stream $volume
             touch $lock_file
         fi
     else
