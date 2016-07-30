@@ -1,11 +1,17 @@
 #!/bin/bash
 
-##### FUNCTIONS #####
+##### SNIPPETS #####
 
 log() {
     # Beautiful logs
     date=`date +"%d/%m/%Y - %H:%M:%S"`
     echo "[$date]" $1
+}
+
+display_err_arg() {
+    echo "Usage: welcomehome --start $(tput smul)configuration file$(tput rmul)"
+    echo "OR"
+    echo "Usage: welcomehome --stop"
 }
 
 parse_arg() {
@@ -23,18 +29,11 @@ check_url() {
     return $?
 }
 
-check_volume() {
-    # Check if the volume value is valid
-    if [ $1 -gt 100 ] || [ $1 -lt 0 ]; then
-        echo "Invalid volume value"
-        exit 1
-    fi
-}
+##### STREAM CONTROL #####
 
 set_volume() {
     # Set the volume to the right value
     volume=$1
-    check_volume $volume
     log "Set volume to $volume"
 
     data='{"jsonrpc": "2.0", "id": 1, "method": "core.mixer.set_volume", "params": [VOLUME]}'
@@ -61,9 +60,6 @@ play_stream() {
     # Play dat sound
     curl -s -d "$data" http://localhost:6680/mopidy/rpc > /dev/null
     curl -s -d '{"jsonrpc": "2.0", "id": 1, "method": "core.playback.play"}' http://localhost:6680/mopidy/rpc > /dev/null
-
-    # The right music at the righ volume. Nothing's more perfect.
-    set_volume $2
 }
 
 stop_stream() {
@@ -72,48 +68,100 @@ stop_stream() {
     log "Stream stopped"
 }
 
+##### CONTROLLERS #####
+
+start_playing() {
+    touch $lock_file
+    play_stream $stream
+}
+
+stop_playing() {
+    if [ -f $lock_file ]; then
+        rm $lock_file
+    fi
+    stop_stream
+}
+
+##### MAIN FUNCTIONS #####
+
+init() {
+    # Initialise the variables
+    config_file=$1
+
+    # Check if the config file exists
+    if [ ! -f $config_file ]; then
+        echo "$config_file is not a file"
+        exit 1
+    fi
+
+    log "Parsing the configuration file"
+
+    # Get parameters from the given configuration file
+    volume=$(parse_arg $config_file "volume")
+    stream=$(parse_arg $config_file "stream")
+    threshold=$(parse_arg $config_file "device_threshold")
+    address=$(parse_arg $config_file "device_address")
+
+    # Check stream URL validity
+    if [ ! $(check_url $stream) ]; then
+        echo "Incorrect stream address"
+        exit 1
+    fi
+
+    # Check volume value validity
+    if [ $volume -gt 100 ] || [ $volume -lt 0 ]; then
+        echo "Invalid volume value"
+        exit 1
+    fi
+
+    # Set volume to the right value
+    set_volume $volume
+
+    log "Initialisation complete"
+}
+
+main() {
+    #Main loop
+    log "Looking for device"
+    while true; do
+        # Polling the device's IP address
+        count=$(ping -W 1 -c $threshold $address | grep ttl | wc -l)
+
+        if [ $count -gt 0 ]; then
+            # Lock file present = music already playing
+            if [ ! -f $lock_file ]; then
+                log "Device detected"
+                start_playing
+            fi
+        else
+            if [ -f $lock_file ]; then
+                log "Device lost"
+                stop_playing
+            fi
+        fi
+    done
+}
+
 ##### PROGRAM #####
 
-if [[ $# -eq 0 || ! -f $1 ]]; then
-    echo "I need a config file as first argument"
+if [ $# -eq 0 ] || [ $# -gt 2 ]; then
+    echo "Wrong arguments number"
+    display_err_arg
     exit 1
 fi
 
-config_file=$1
+# Setting lock file path
+lock_file="/etc/welcomehome/home.lck"
 
-log "Parsing the configuration file"
+# Check if we know the requested feature
+case "$1" in
+    "--start") init $2
+               main
+               ;;
+    "--stop") stop_playing
+              ;;
+    *) echo "Unknown argument $1"
+       display_err_arg
+       ;;
+esac
 
-# Get parameters from the given configuration file
-volume=$(parse_arg $config_file "volume")
-stream=$(parse_arg $config_file "stream")
-threshold=$(parse_arg $config_file "device_threshold")
-address=$(parse_arg $config_file "device_address")
-
-if [ ! $(check_url $stream) ]; then
-    echo "Incorrect stream address"
-    exit 1
-fi
-
-log "Initialisation complete"
-
-while true; do
-    # Lock file
-    lock_file="/etc/welcomehome/home.lck"
-
-    count=$(ping -W 1 -c $threshold $address | grep ttl | wc -l)
-
-    if [ $count -gt 0 ]; then
-        # Lock file present = music already playing
-        if [ ! -f $lock_file ]; then
-            log "Device detected"
-            play_stream $stream $volume
-            touch $lock_file
-        fi
-    else
-        if [ -f $lock_file ]; then
-            log "Device lost"
-            stop_stream
-            rm $lock_file
-        fi
-    fi
-done
