@@ -117,6 +117,11 @@ init() {
     # Set volume to the right value
     set_volume $volume
 
+    # Removing lock file in case of ungraceful shutdown
+    if [ ! -f $lock_file ]; then
+        rm $lock_file
+    fi
+
     log "Initialisation complete"
 }
 
